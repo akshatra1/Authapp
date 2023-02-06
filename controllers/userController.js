@@ -17,10 +17,13 @@ class UserController {
             const doc = new userModel({
               name: name,
               email: email,
-              password: password,
+              password: hashpassword,
               tc: tc,
             });
             await doc.save();
+            res
+              .status(201)
+              .send({ status: "Success", message: "registration success" });
           } catch (error) {
             console.log(error);
             res.send({ status: "failed", message: "unable to register" });

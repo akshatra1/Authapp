@@ -125,7 +125,19 @@ class UserController {
 
         console.log(link);
 
-        res.send({ status: "success", message: "please check your email" });
+        //send Email
+        let info = await transporter.sendMail({
+          from: process.env.EMAIL_FROM,
+          to: user.email,
+          subject: "password Reset Link",
+          html: `<a href=${link}>Click Here</a>to reset your password`,
+        });
+
+        res.send({
+          status: "success",
+          message: "please check your email",
+          info: info,
+        });
       } else {
         res.send({
           status: "failed",

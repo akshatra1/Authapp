@@ -111,5 +111,56 @@ class UserController {
   static loggedUser = async (req, res) => {
     res.send({ user: req.user });
   };
+
+  static sendUserPasswordResetEmail = async (req, res) => {
+    const { email } = req.body;
+    if (email) {
+      const user = await userModel.findOne({ email: email });
+      if (user) {
+        const secret = user._id + process.env.JWT_SECRET_KEY;
+        const token = jwt.sign({ userID: user._id }, secret, {
+          expiresIn: "15m",
+        });
+        const link = `http://127.0.0.1:3000/api/user/reset/${user._id}/${token}`;
+
+        console.log(link);
+
+        res.send({ status: "success", message: "please check your email" });
+      } else {
+        res.send({
+          status: "failed",
+          message: "email dosen't exist , enter valid email",
+        });
+      }
+    } else {
+      res.send({ status: "failed", message: "please enter email" });
+    }
+  };
+
+  static userPasswordReset = async (req, res) => {
+    const { password, password_confirmation } = req.body;
+    const { id, token } = req.params;
+    const user = await userModel.findById(id);
+    const new_secret = user._id + process.env.JWT_SECRET_KEY;
+    try {
+      jwt.verify(token, new_secret);
+      if (password && password_confirmation) {
+        if (password === password_confirmation) {
+          res.send({
+            status: "failed",
+            message: "new password and confirmation password dosen no match",
+          });
+        } else {
+          const salt = await bcrypt.gensalt(10);
+          const newHashPassword = await bcrypt.hash(password, salt);
+          await userModel.findByIdAndUpdate(req._id, {
+            $Set: { password: newHashPassword },
+          });
+        }
+      }
+    } catch (error) {
+      res.send({ status: "failed", message: "Invalid Token" });
+    }
+  };
 }
 export default UserController;
